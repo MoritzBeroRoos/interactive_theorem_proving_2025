@@ -211,20 +211,23 @@ theorem Peirce_of_EM :
 
 /-
 Peirce: ((a → b) → a) → a
+Peirce für b:=False: ((a → False) → a) → a
 
-Es gelte Peirce. zz. ¬¬a -> a
-Es gelte ¬¬a,
-d.h. ¬a -> False,
-d.h. (a -> False) -> False.  ZZ. a
+Es gelte Peirce. ZZ. ¬¬a -> a
+Dazu gelte ¬¬a (d.h. ¬a -> False) Zeige nun a.
 
-R.z.z. a-> False, dann fertig.
-Peirce sagt, zeige stattdessen ((a -> False) -> b)  ->  (a -> False).
-Es gelte (a->False) -> b. ZZ. a->False
+Peirce sagt es reicht zu zeigen, dass ((a → False) → a).
+Dazu gelte a->False bzw. ¬a. Dann habe False von ¬¬a, also folgt a, also fertig.
 
 -/
+
 theorem DN_of_Peirce :
-    Peirce → DoubleNegation :=
-  sorry
+    Peirce → DoubleNegation := by
+  intro p a naa
+  apply (p a False)
+  intro a_na
+  apply False.elim
+  exact naa a_na
 
 /- We leave the remaining implication for the homework: -/
 
@@ -233,21 +236,33 @@ namespace SorryTheorems
 /-
 Es gelte ¬¬a -> a
 ZZ. a ∨ ¬a.
-r.z.. ¬¬a ∨ ¬a
+mit helper r.z.. ¬¬a ∨ ¬a
+r.zz. ¬(¬a ∧ a), bzw. ((a->False) ∧ a) -> False mit not_and_or
+wobei ¬(¬a ∧ a) quasi trivial.
 
-Zeige ¬(¬a ∧ a), bzw. ((a->False) ∧ a) -> False.
-Dann zeige ¬(¬a ∧ a) = ¬¬a ∨ ¬a. Dann DN.
 -/
 
-
+theorem helper {a}:
+    DoubleNegation → ((¬¬a ∨ ¬a) → (a ∨ ¬a)) := by
+  intro hdn h
+  apply Or.elim h
+  · intro hnna
+    apply Or.intro_left
+    apply hdn /-Why does hnna not work here as function argument for hdn?-/
+    exact hnna
+  · intro na
+    apply Or.intro_right
+    exact na
 
 #check not_and_or
 
 theorem EM_of_DN :
     DoubleNegation → ExcludedMiddle := by
   intro DN a
-
-
+  apply helper DN
+  apply Iff.mp not_and_or
+  intro p
+  apply And.left p (And.right p)
 end SorryTheorems
 
 end BackwardProofs
