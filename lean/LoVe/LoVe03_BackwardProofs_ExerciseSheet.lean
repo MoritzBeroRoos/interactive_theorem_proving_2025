@@ -27,35 +27,51 @@ Section 3.3 in the Hitchhiker's Guide. -/
 
 theorem I (a : Prop) :
     a → a :=
-  sorry
+  by
+    intro ha
+    exact ha
 
 theorem K (a b : Prop) :
-    a → b → b :=
-  sorry
+    a → b → b := by
+    intro ha hb
+    exact hb
 
 theorem C (a b c : Prop) :
-    (a → b → c) → b → a → c :=
-  sorry
+    (a → b → c) → b → a → c := by
+    intro f hb ha
+    apply f ha hb
+
 
 theorem proj_fst (a : Prop) :
     a → a → a :=
-  sorry
+    by
+      intro ha1 ha2
+      exact ha1
 
 /- Please give a different answer than for `proj_fst`: -/
 
 theorem proj_snd (a : Prop) :
     a → a → a :=
-  sorry
+  by
+    intro ha1 ha2
+    apply ha2
 
 theorem some_nonsense (a b c : Prop) :
     (a → b → c) → a → (a → c) → b → c :=
-  sorry
+  by
+    intro f ha hac hb
+    apply hac ha
 
 /- 1.2. Prove the contraposition rule using basic tactics. -/
 
 theorem contrapositive (a b : Prop) :
     (a → b) → ¬ b → ¬ a :=
-  sorry
+  by
+    intro hab nb
+    intro ha
+    apply nb
+    apply hab
+    exact ha
 
 /- 1.3. Prove the distributivity of `∀` over `∧` using basic tactics.
 
@@ -64,10 +80,25 @@ forward reasoning, like in the proof of `and_swap_braces` in the lecture, might
 be necessary. -/
 
 theorem forall_and {α : Type} (p q : α → Prop) :
-    (∀x, p x ∧ q x) ↔ (∀x, p x) ∧ (∀x, q x) :=
-  sorry
-
-
+    (∀x, p x ∧ q x) ↔ (∀x, p x) ∧ (∀x, q x) := by
+    apply Iff.intro
+    {
+      intro pq
+      apply And.intro
+      {
+        intro x
+        apply And.left (pq x)
+      }
+      {
+        intro x
+        apply And.right (pq x)
+      }
+    }
+    {
+      intro pq
+      intro x
+      apply And.intro (And.left pq x) (And.right pq x)
+    }
 /- ## Question 2: Natural Numbers
 
 2.1. Prove the following recursive equations on the first argument of the
@@ -76,32 +107,62 @@ theorem forall_and {α : Type} (p q : α → Prop) :
 #check mul
 
 theorem mul_zero (n : ℕ) :
-    mul 0 n = 0 :=
-  sorry
+    mul 0 n = 0 := by
+    induction n with
+    | zero => rfl
+    | succ n ih => simp [mul, ih, add]
 
 #check add_succ
+
 theorem mul_succ (m n : ℕ) :
-    mul (Nat.succ m) n = add (mul m n) n :=
-  sorry
+    mul (Nat.succ m) n = add (mul m n) n := by
+    induction n with
+    | zero => rfl
+    | succ n ih => simp [mul, ih, add_succ, add_assoc, add]
 
 /- 2.2. Prove commutativity and associativity of multiplication using the
 `induction` tactic. Choose the induction variable carefully. -/
 
 theorem mul_comm (m n : ℕ) :
-    mul m n = mul n m :=
-  sorry
+    mul m n = mul n m := by
+  induction n with
+  | zero => simp [mul_zero, mul]
+  | succ n ih => simp [mul_succ, mul, add_comm, ih]
 
+
+
+/-
+ih: (l*m)*n = l* (m * n)
+
+(l*m)*(n+1) =zz l * (m * (n+1)) =def  l * (m + m*n) =mul_add  l * m + l * (m*n)
+
+
+(l*m)*(n+1) =def (l*m) + (l*m)*n
+            =ih  (l*m) + l*(m*n)
+-/
 theorem mul_assoc (l m n : ℕ) :
-    mul (mul l m) n = mul l (mul m n) :=
-  sorry
+    mul (mul l m) n = mul l (mul m n) := by
+  induction n with
+  | zero => rfl
+  |succ n ih => simp [mul, ih, mul_add]
 
 /- 2.3. Prove the symmetric variant of `mul_add` using `rw`. To apply
 commutativity at a specific position, instantiate the rule by passing some
 arguments (e.g., `mul_comm _ l`). -/
 
+/--
+have: l * (m+n) = l*m + l*n
+
+zz: (l+m) * n = l*m + l*n
+
+
+-/
+
 theorem add_mul (l m n : ℕ) :
-    mul (add l m) n = add (mul n l) (mul n m) :=
-  sorry
+    mul (add l m) n = add (mul n l) (mul n m) := by
+  rw [mul_comm ]
+  rw [mul_add]
+
 
 
 /- ## Question 3 (**optional**): Intuitionistic Logic
@@ -128,12 +189,39 @@ Hint: You will need `Or.elim` and `False.elim`. You can use
 `rw [ExcludedMiddle]` to unfold the definition of `ExcludedMiddle`,
 and similarly for `Peirce`. -/
 
+
+/-
+Es gelte (a->b) -> a. zz. a
+Fall1. a, dann fertig
+Fall2. ¬a, d.h. (a->False). Dann gilt (a->b), also a.
+-/
 theorem Peirce_of_EM :
-    ExcludedMiddle → Peirce :=
-  sorry
+    ExcludedMiddle → Peirce := by
+  intro hem a b hab
+  apply Or.elim (hem a)
+  · intro ha
+    exact ha
+  · intro hna
+    apply hab
+    intro ha
+    exact False.elim (hna ha)
 
 /- 3.2 (**optional**). Prove the following implication using tactics. -/
 
+
+/-
+Peirce: ((a → b) → a) → a
+
+Es gelte Peirce. zz. ¬¬a -> a
+Es gelte ¬¬a,
+d.h. ¬a -> False,
+d.h. (a -> False) -> False.  ZZ. a
+
+R.z.z. a-> False, dann fertig.
+Peirce sagt, zeige stattdessen ((a -> False) -> b)  ->  (a -> False).
+Es gelte (a->False) -> b. ZZ. a->False
+
+-/
 theorem DN_of_Peirce :
     Peirce → DoubleNegation :=
   sorry
@@ -142,9 +230,23 @@ theorem DN_of_Peirce :
 
 namespace SorryTheorems
 
+/-
+Es gelte ¬¬a -> a
+ZZ. a ∨ ¬a.
+r.z.. ¬¬a ∨ ¬a
+
+Zeige ¬(¬a ∧ a), bzw. ((a->False) ∧ a) -> False.
+Dann zeige ¬(¬a ∧ a) = ¬¬a ∨ ¬a. Dann DN.
+-/
+
+
+
+#check not_and_or
+
 theorem EM_of_DN :
-    DoubleNegation → ExcludedMiddle :=
-  sorry
+    DoubleNegation → ExcludedMiddle := by
+  intro DN a
+
 
 end SorryTheorems
 
