@@ -26,27 +26,42 @@ Hint: Some strategies for carrying out such proofs are described at the end of
 Section 3.3 in the Hitchhiker's Guide. -/
 
 theorem B (a b c : Prop) :
-    (a → b) → (c → a) → c → b :=
-  sorry
+    (a → b) → (c → a) → c → b := by
+  intro hab hca hc
+  exact hab (hca hc)
 
 theorem S (a b c : Prop) :
-    (a → b → c) → (a → b) → a → c :=
-  sorry
+    (a → b → c) → (a → b) → a → c := by
+  intro habc hab ha
+  apply habc
+  · exact ha
+  · exact hab ha
 
 theorem more_nonsense (a b c d : Prop) :
-    ((a → b) → c → d) → c → b → d :=
-  sorry
+    ((a → b) → c → d) → c → b → d := by
+  intro p hc hb
+  apply p
+  · intro ha
+    exact hb
+  · exact hc
 
 theorem even_more_nonsense (a b c : Prop) :
-    (a → b) → (a → c) → a → b → c :=
-  sorry
+    (a → b) → (a → c) → a → b → c := by
+  intro hab hac ha hb
+  exact hac ha
 
 /- 1.2 (1 point). Prove the following theorem using basic tactics. -/
 
 theorem weak_peirce (a b : Prop) :
-    ((((a → b) → a) → a) → b) → b :=
-  sorry
-
+    ((((a → b) → a) → a) → b) → b := by
+  intro h1
+  apply h1
+  intro h2
+  apply h2
+  intro ha
+  apply h1
+  intro
+  apply ha
 
 /- ## Question 2 (5 points): Logical Connectives
 
@@ -62,8 +77,19 @@ Hints:
   proof. -/
 
 theorem herman (a : Prop) :
-    ¬¬ (¬¬ a → a) :=
-  sorry
+    ¬¬ (¬¬ a → a) := by
+  intro h                     -- h : (¬¬a → a) → False
+  apply h                     -- it suffices to build g : ¬¬a → a
+  intro hna                   -- hna : ¬a → False   (i.e. ¬¬a)
+  -- construct na : ¬a, using h
+  have na : ¬ a := by
+    intro ha                  -- ha : a
+    exact h (by               -- constant function λ _ : ¬¬a, ha
+      intro _; exact ha)
+  -- hna na : False, so derive a from False
+  exact (hna na).elim
+
+
 
 /- 2.2 (2 points). Prove the missing link in our chain of classical axiom
 implications.
@@ -86,9 +112,25 @@ Hints:
 #check DoubleNegation
 #check ExcludedMiddle
 
+theorem helper {a}:
+    DoubleNegation → ((¬¬a ∨ ¬a) → (a ∨ ¬a)) := by
+  intro hdn h
+  apply Or.elim h
+  · intro hnna
+    apply Or.intro_left
+    apply hdn /-Why does hnna not work here as function argument for hdn?-/
+    exact hnna
+  · intro na
+    apply Or.intro_right
+    exact na
+
 theorem EM_of_DN :
-    DoubleNegation → ExcludedMiddle :=
-  sorry
+    DoubleNegation → ExcludedMiddle := by
+  intro DN a
+  apply helper DN
+  apply Iff.mp not_and_or
+  intro p
+  apply And.left p (And.right p)
 
 /- 2.3 (2 points). We have proved three of the six possible implications
 between `ExcludedMiddle`, `Peirce`, and `DoubleNegation`. State and prove the
@@ -99,6 +141,26 @@ three missing implications, exploiting the three theorems we already have. -/
 #check EM_of_DN
 
 -- enter your solution here
+
+theorem EM_of_Peirce: Peirce → ExcludedMiddle := by
+  intro
+  apply EM_of_DN
+  apply DN_of_Peirce
+  assumption
+
+theorem Peirce_of_DN: DoubleNegation → Peirce := by
+  intro
+  apply Peirce_of_EM
+  apply EM_of_DN
+  assumption
+
+theorem DN_of_EM: ExcludedMiddle → DoubleNegation := by
+  intro
+  apply DN_of_Peirce
+  apply Peirce_of_EM
+  assumption
+
+
 
 end BackwardProofs
 
