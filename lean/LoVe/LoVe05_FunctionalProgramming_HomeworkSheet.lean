@@ -96,9 +96,9 @@ theorem sumUpToOfFun_eq :
   | 0 => by rfl
   | m+1 => by
     rw [sumUpToOfFun]
-    suffices 2 * sumUpToOfFun (fun i => i) m + 2 * (m + 1) = (m + 1) * (m + 1 + 1) from by linarith
-    simp[sumUpToOfFun_eq]
-    linarith
+    suffices 2 * sumUpToOfFun (fun i => i) m + 2 * (m + 1) = (m + 1) * (m + 1 + 1) by linarith
+    rw[sumUpToOfFun_eq]
+    linarith[sumUpToOfFun_eq]
 
 
 
