@@ -55,7 +55,13 @@ def insort {α : Type} (u : HTree α) : List (HTree α) → List (HTree α)
 /- Prove that `insort`ing a tree into a list cannot yield the empty list: -/
 
 theorem insort_Neq_nil {α : Type} (t : HTree α) :
-    ∀ts : List (HTree α), insort t ts ≠ [] := by 
+    ∀ts : List (HTree α), insort t ts ≠ []
+    | [] => by simp[insort]
+    | x::xs => by
+      simp only [insort]
+      cases (Classical.em (weight t ≤ weight x))
+      all_goals simp[h]
+    /- better: split_ifs;all_goals simp[h] -/
 
 /- 1.4 (2 points). Prove the same property as above again, this time as a
 "paper" proof. Follow the guidelines given in question 1.4 of the exercise. -/
@@ -86,15 +92,23 @@ Hints:
 #check add_mul
 
 theorem sumUpToOfFun_eq :
-    ∀m : ℕ, 2 * sumUpToOfFun (fun i ↦ i) m = m * (m + 1) :=
-  sorry
+    ∀m : ℕ, 2 * sumUpToOfFun (fun i ↦ i) m = m * (m + 1)
+  | 0 => by rfl
+  | m+1 => by
+    rw [sumUpToOfFun]
+    suffices 2 * sumUpToOfFun (fun i => i) m + 2 * (m + 1) = (m + 1) * (m + 1 + 1) from by linarith
+    simp[sumUpToOfFun_eq]
+    linarith
+
+
 
 /- 2.2 (2 points). Prove the following property of `sumUpToOfFun`. -/
 
 theorem sumUpToOfFun_mul (f g : ℕ → ℕ) :
     ∀n : ℕ, sumUpToOfFun (fun i ↦ f i + g i) n =
-      sumUpToOfFun f n + sumUpToOfFun g n :=
-  sorry
+      sumUpToOfFun f n + sumUpToOfFun g n
+    | 0 => by rfl
+    | m+1 => by simp[sumUpToOfFun, sumUpToOfFun_mul];ac_rfl
 
 /- 2.3 (2 bonus points). Prove `sumUpToOfFun_mul` again as a "paper" proof.
 Follow the guidelines given in question 1.4 of the exercise. -/

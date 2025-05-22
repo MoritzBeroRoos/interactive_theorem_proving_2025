@@ -60,7 +60,7 @@ theorem reverseAccu_Eq_reverse_append {α : Type} :
   intro as xs
   induction xs generalizing as with
   | nil => rfl
-  | cons => simp [reverseAccu, tail_ih]; simp? [reverse]
+  | cons => simp [reverseAccu, tail_ih]; simp [reverse]
 
 /- 1.2. Derive the desired equation. -/
 
