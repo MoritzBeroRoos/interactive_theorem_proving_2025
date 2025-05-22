@@ -203,8 +203,8 @@ instance Term.Repr : Repr Term :=
 
 /- 3.3 (**optional**). Test your textual representation. The following command
 should print something like `(λx. ((y x) x))`. -/
-
+/-
 #eval (Term.lam "x" (Term.app (Term.app (Term.var "y") (Term.var "x"))
     (Term.var "x")))
-
+-/
 end LoVe
