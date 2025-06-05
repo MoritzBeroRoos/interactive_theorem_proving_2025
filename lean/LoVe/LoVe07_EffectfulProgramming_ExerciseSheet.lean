@@ -3,6 +3,8 @@ Xavier Généreux, Johannes Hölzl, and Jannis Limperg. See `LICENSE.txt`. -/
 
 import LoVe.LoVe07_EffectfulProgramming_Demo
 
+/- better arrow: replace => with ↦ in printing. -/
+set_option pp.unicode.fun true
 
 /- # LoVe Exercise 7: Effectful Programming
 
@@ -42,6 +44,7 @@ class LawfulMonadWithOrelse (m : Type → Type)
 Hint: Use `simp [Bind.bind]` to unfold the definition of the bind operator and
 `simp [Option.orelse]` to unfold the definition of the `orelse` operator. -/
 
+whatsnew in
 def Option.orelse {α : Type} : Option α → Option α → Option α
   | Option.none,   ma' => ma'
   | Option.some a, _   => Option.some a
@@ -51,8 +54,10 @@ instance Option.LawfulMonadWithOrelse :
   { Option.LawfulMonad with
     emp          := Option.none
     orelse       := Option.orelse
-    emp_orelse   :=
-      sorry
+    emp_orelse   := by
+      intro α ma
+      simp
+      simp [Option.orelse]
     orelse_emp   :=
       by
         intro α ma
@@ -60,20 +65,25 @@ instance Option.LawfulMonadWithOrelse :
         cases ma
         { rfl }
         { rfl }
-    orelse_assoc :=
-      sorry
+    orelse_assoc := by
+      intro α a b c
+      simp
+      cases a
+      all_goals simp [orelse]
+
     emp_bind     :=
       by
         intro α β f
         simp [Bind.bind]
         rfl
-    bind_emp     :=
-      sorry
+    bind_emp     := by
+      intro α β f
+      simp
   }
 
 @[simp] theorem Option.some_bind {α β : Type} (a : α) (g : α → Option β) :
-    (Option.some a >>= g) = g a :=
-  sorry
+    (Option.some a >>= g) = g a := by
+      rfl
 
 /- 1.2. Now we are ready to define `FAction σ`: a monad with an internal state
 of type `σ` that can fail (unlike `Action σ`).
@@ -92,16 +102,16 @@ Hints:
   there for inspiration. -/
 
 def FAction (σ : Type) (α : Type) : Type :=
-  sorry
+  σ → Option (α × σ)
 
 /- 1.3. Define the `get` and `set` function for `FAction`, where `get` returns
 the state passed along the state monad and `set s` changes the state to `s`. -/
 
 def get {σ : Type} : FAction σ σ :=
-  sorry
+  fun s => some (s, s) -- WTF, warum braucht man kein SOME?
 
 def set {σ : Type} (s : σ) : FAction σ Unit :=
-  sorry
+  fun _ => some ((), s)
 
 /- We set up the `>>=` syntax on `FAction`: -/
 
@@ -121,7 +131,7 @@ theorem FAction.bind_apply {σ α β : Type} (f : FAction σ α)
 satisfy the three laws. -/
 
 def FAction.pure {σ α : Type} (a : α) : FAction σ α :=
-  sorry
+  fun s ↦ some (a, s)
 
 /- We set up the syntax for `pure` on `FAction`: -/
 
@@ -145,7 +155,8 @@ instance FAction.LawfulMonad {σ : Type} : LawfulMonad (FAction σ) :=
   { FAction.Bind, FAction.Pure with
     pure_bind :=
       by
-      sorry
+      intro α β a f
+      rfl
     bind_pure :=
       by
         intro α ma
@@ -158,8 +169,10 @@ instance FAction.LawfulMonad {σ : Type} : LawfulMonad (FAction σ) :=
           ma s :=
           by apply LawfulMonad.bind_pure
         aesop
-    bind_assoc :=
-      sorry
+    bind_assoc := by
+      intro α β γ f g ma
+      funext
+      simp[bind_apply, Option.bind_assoc]
   }
 
 
@@ -178,10 +191,12 @@ infixr:90 (priority := high) " >=> " => kleisli
 /- 2.1 (**optional**). Prove that `pure` is a left and right unit for the
 Kleisli operator. -/
 
-theorem pure_kleisli {m : Type → Type} [LawfulMonad m] {α β : Type}
+theorem pure_kleisli {m : Type → Type} [i:LawfulMonad m] {α β : Type}
       (f : α → m β) :
-    (pure >=> f) = f :=
-  sorry
+    (pure >=> f) = f := by
+    funext
+    simp [kleisli]
+    rw [LoVe.LawfulMonad.pure_bind]
 
 theorem kleisli_pure {m : Type → Type} [LawfulMonad m] {α β : Type}
       (f : α → m β) :
