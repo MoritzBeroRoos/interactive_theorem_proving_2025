@@ -200,14 +200,17 @@ theorem pure_kleisli {m : Type → Type} [i:LawfulMonad m] {α β : Type}
 
 theorem kleisli_pure {m : Type → Type} [LawfulMonad m] {α β : Type}
       (f : α → m β) :
-    (f >=> pure) = f :=
-  sorry
+    (f >=> pure) = f := by
+    funext; simp [kleisli, LoVe.LawfulMonad.bind_pure]
 
 /- 2.2 (**optional**). Prove that the Kleisli operator is associative. -/
 
 theorem kleisli_assoc {m : Type → Type} [LawfulMonad m] {α β γ δ : Type}
       (f : α → m β) (g : β → m γ) (h : γ → m δ) :
-    ((f >=> g) >=> h) = (f >=> (g >=> h)) :=
-  sorry
+    ((f >=> g) >=> h) = (f >=> (g >=> h)) := by
+    funext
+    simp[kleisli, LoVe.LawfulMonad.bind_assoc]
+    rfl
+
 
 end LoVe
