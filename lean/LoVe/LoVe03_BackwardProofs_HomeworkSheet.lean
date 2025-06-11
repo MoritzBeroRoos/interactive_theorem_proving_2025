@@ -135,7 +135,7 @@ theorem EM_of_DN :
 /- 2.3 (2 points). We have proved three of the six possible implications
 between `ExcludedMiddle`, `Peirce`, and `DoubleNegation`. State and prove the
 three missing implications, exploiting the three theorems we already have. -/
-
+--
 #check Peirce_of_EM
 #check DN_of_Peirce
 #check EM_of_DN
