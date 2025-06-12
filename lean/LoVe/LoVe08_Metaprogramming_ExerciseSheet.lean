@@ -40,6 +40,9 @@ conjunctions are gone. Define your tactic as a macro. -/
 
 #check repeat'
 
+macro "intro_and" : tactic =>
+  `(tactic|
+      (repeat' apply And.intro))
 -- enter your definition here
 
 theorem abcd_bd (a b c d : Prop) (h : a ∧ (b ∧ c) ∧ d) :
@@ -116,9 +119,23 @@ Here is some pseudocode that you can follow:
 Hint: When iterating over the declarations in the local context, make sure to
 skip any declaration that is an implementation detail. -/
 
+#check inferType
+#check toExpr
+#check LoVe.cases
 partial def casesAnd : TacticM Unit :=
-  sorry
-
+  withMainContext do
+    let ctxt ← getLCtx
+    for hyp in ctxt do
+      if ! LocalDecl.isImplementationDetail hyp then
+        if Expr.isAppOfArity hyp.type ``And 2 then
+          --logInfo "hi"
+          --logInfo ("Expr: " ++ LocalDecl.toExpr hyp)
+          --logInfo ("Infertype (toExpr hyp): " ++ (← inferType (LocalDecl.toExpr hyp)))
+          --logInfo ("hyp.type: " ++ (hyp.type))
+          --logInfo "Success"
+          cases (hyp.fvarId)
+          casesAnd
+          return
 elab "cases_and" : tactic =>
   casesAnd
 
@@ -143,7 +160,12 @@ theorem abcd_bd_again (a b c d : Prop) :
 directly by `assumption`. -/
 
 macro "destro_and" : tactic =>
-  sorry
+  `(tactic| (
+    cases_and
+    intro_and
+    any_goals assumption
+    )
+  )
 
 theorem abcd_bd_over_again (a b c d : Prop) (h : a ∧ (b ∧ c) ∧ d) :
     b ∧ d :=
@@ -190,15 +212,31 @@ Hints:
   `||`, the "and" connective is called `&&`, and equality is called `==`. -/
 
 def constInExpr (name : Name) (e : Expr) : Bool :=
-  sorry
+match e with
+| Lean.Expr.bvar _ => false
+| Lean.Expr.fvar _ => false
+| Lean.Expr.mvar _ => false
+| Lean.Expr.sort _ => false
+| Lean.Expr.const nm _ => (nm == name)
+| Lean.Expr.app fn arg => (constInExpr name fn || constInExpr name arg)
+| Lean.Expr.lam name' type body _ => (name' != name) && constInExpr name type || constInExpr name body
+| Lean.Expr.forallE name' _ body _ => (name' != name) && constInExpr name body
+| Lean.Expr.letE name' _ value body _ => (name' != name) && (constInExpr name value || constInExpr name body)
+| Lean.Expr.lit _ => false
+| Lean.Expr.mdata _ expr => constInExpr name expr
+| Lean.Expr.proj _ _ struct => constInExpr name struct
+
+
 
 /- 2.2. Write a function that checks whether an expression contains **all**
 constants in a list.
 
 Hint: You can either proceed recursively or use `List.and` and `List.map`. -/
 
+#check List.and
+
 def constsInExpr (names : List Name) (e : Expr) : Bool :=
-  sorry
+List.and (List.map (fun x ↦ constInExpr x e) names)
 
 /- 2.3. Develop a tactic that uses `constsInExpr` to print the name of all
 theorems that contain all constants `names` in their statement.
