@@ -58,12 +58,16 @@ inductive BigStep : (Stmt × State) → State → Prop
   -- enter the missing `assign` rule here
   | assert (B s) (hB : B s) :
     BigStep (Stmt.assert B, s) s
+  | seq (C C' s s' s'') : BigStep (C, s) s' → BigStep (C', s') s'' → BigStep (C;C', s) s''
+  | assign (x a s): BigStep (Stmt.assign x a, s) (s[x ↦ a s])
   -- enter the missing `seq` rule here
   -- below, `Ss[i]'hless` returns element `i` of `Ss`, which exists thanks to
   -- condition `hless`
   | choice (Ss s t i) (hless : i < List.length Ss)
       (hbody : BigStep (Ss[i]'hless, s) t) :
     BigStep (Stmt.choice Ss, s) t
+  | loop0 (S s): BigStep (Stmt.loop S, s) s
+  | loop (S s t u): BigStep (S, s) t → BigStep (Stmt.loop S, t) u → BigStep (Stmt.loop S, s) u
   -- enter the missing `loop` rules here
 
 infixl:110 " ⟹ " => BigStep
@@ -72,28 +76,62 @@ infixl:110 " ⟹ " => BigStep
 WHILE language. -/
 
 @[simp] theorem BigStep_assign_iff {x a s t} :
-    (Stmt.assign x a, s) ⟹ t ↔ t = s[x ↦ a s] :=
-  sorry
+    (Stmt.assign x a, s) ⟹ t ↔ t = s[x ↦ a s] := by
+      apply Iff.intro
+      · intro h
+        cases h
+        rfl
+      · intro h
+        simp [h, BigStep.assign]
 
 @[simp] theorem BigStep_assert {B s t} :
-    (Stmt.assert B, s) ⟹ t ↔ t = s ∧ B s :=
-  sorry
+    (Stmt.assert B, s) ⟹ t ↔ t = s ∧ B s := by
+    apply Iff.intro
+    · intro h
+      cases h
+      simp [hB]
+    · intro h
+      simp [BigStep.assert B s h.right, h.left]
 
 @[simp] theorem BigStep_seq_iff {S₁ S₂ s t} :
-    (Stmt.seq S₁ S₂, s) ⟹ t ↔ (∃u, (S₁, s) ⟹ u ∧ (S₂, u) ⟹ t) :=
-  sorry
+    (Stmt.seq S₁ S₂, s) ⟹ t ↔ (∃u, (S₁, s) ⟹ u ∧ (S₂, u) ⟹ t) := by
+    apply Iff.intro
+    · intro h
+      cases h
+      use s'
+    · intro h
+      obtain ⟨u', hh⟩ := h
+      aesop (add 100% BigStep.seq)
+
+
 
 theorem BigStep_loop {S s u} :
     (Stmt.loop S, s) ⟹ u ↔
-    (s = u ∨ (∃t, (S, s) ⟹ t ∧ (Stmt.loop S, t) ⟹ u)) :=
-  sorry
+    (s = u ∨ (∃t, (S, s) ⟹ t ∧ (Stmt.loop S, t) ⟹ u)) := by
+      apply Iff.intro
+      · intro h
+        cases h
+        · aesop
+        · aesop
+      · intro h
+        cases h
+        · aesop (add 100% BigStep.loop0)
+        · cases h_1
+          aesop (add 50% BigStep.loop)
 
 /- This one is more difficult: -/
 
 @[simp] theorem BigStep_choice {Ss s t} :
     (Stmt.choice Ss, s) ⟹ t ↔
-    (∃(i : ℕ) (hless : i < List.length Ss), (Ss[i]'hless, s) ⟹ t) :=
-  sorry
+    (∃(i : ℕ) (hless : i < List.length Ss), (Ss[i]'hless, s) ⟹ t) := by
+    apply Iff.intro
+    · intro h
+      cases h
+      use i, hless
+    · intro h
+      cases h
+      cases h_1
+      aesop (add safe BigStep.choice)
 
 end GCL
 
@@ -103,14 +141,11 @@ program, by filling in the `sorry` placeholders below. -/
 def gcl_of : Stmt → GCL.Stmt
   | Stmt.skip =>
     GCL.Stmt.assert (fun _ ↦ True)
-  | Stmt.assign x a =>
-    sorry
-  | S; T =>
-    sorry
-  | Stmt.ifThenElse B S T  =>
-    sorry
-  | Stmt.whileDo B S =>
-    sorry
+  | Stmt.assign x a => GCL.Stmt.assign x a
+  | S; T => gcl_of S; gcl_of T
+  | Stmt.ifThenElse B S T  => GCL.Stmt.choice [GCL.Stmt.assert B; gcl_of S, GCL.Stmt.assert (fun x ↦ ¬(B x)); gcl_of T ] -- choice [assert B; S, assert ¬B, T]
+  | Stmt.whileDo B S => GCL.Stmt.loop (GCL.Stmt.choice [GCL.Stmt.assert B; gcl_of S, GCL.Stmt.assert (fun x ↦ ¬(B x))])
+  --     loop (choice [(Assert B; S), Assert ¬B])
 
 /- 1.4. In the definition of `gcl_of` above, `skip` is translated to
 `assert (fun _ ↦ True)`. Looking at the big-step semantics of both constructs,
@@ -152,22 +187,32 @@ theorem BigStepEquiv.trans {S₁ S₂ S₃} (h₁₂ : S₁ ~ S₂) (h₂₃ : S
     Iff.trans (h₁₂ s t) (h₂₃ s t)
 
 /- 2.1. Prove the following program equivalences. -/
-
+#check BigStepEquiv
 theorem BigStepEquiv.skip_assign_id {x} :
-    Stmt.assign x (fun s ↦ s x) ~ Stmt.skip :=
-  sorry
+    Stmt.assign x (fun s ↦ s x) ~ Stmt.skip := by
+    simp [BigStepEquiv]
 
 theorem BigStepEquiv.seq_skip_left {S} :
-    Stmt.skip; S ~ S :=
-  sorry
+    Stmt.skip; S ~ S := by
+  simp [BigStepEquiv]
 
 theorem BigStepEquiv.seq_skip_right {S} :
-    S; Stmt.skip ~ S :=
-  sorry
+    S; Stmt.skip ~ S := by
+  simp [BigStepEquiv]
 
 theorem BigStepEquiv.if_seq_while_skip {B S} :
-    Stmt.ifThenElse B (S; Stmt.whileDo B S) Stmt.skip ~ Stmt.whileDo B S :=
-  sorry
+    Stmt.ifThenElse B (S; Stmt.whileDo B S) Stmt.skip ~ Stmt.whileDo B S := by
+  simp only [BigStepEquiv, BigStep_if_Iff, BigStep_seq_Iff, BigStep_skip_Iff]
+  intro s t
+  constructor
+  · intro h
+    cases h
+    · aesop
+    · aesop
+  · intro h
+    cases h
+    · aesop
+    · aesop
 
 /- 2.2 (**optional**). Program equivalence can be used to replace subprograms
 by other subprograms with the same semantics. Prove the following so-called
@@ -175,11 +220,39 @@ congruence rules that facilitate such replacement: -/
 
 theorem BigStepEquiv.seq_congr {S₁ S₂ T₁ T₂} (hS : S₁ ~ S₂)
       (hT : T₁ ~ T₂) :
-    S₁; T₁ ~ S₂; T₂ :=
-  sorry
+    S₁; T₁ ~ S₂; T₂ := by
+      unfold BigStepEquiv
+      intro s t
+      apply Iff.intro
+      · intro h
+        cases h
+        have : (S₂, s) ⟹ t_1 := (hS s t_1).mp hS_1
+        have : (T₂, t_1) ⟹ t := (hT t_1 t).mp hT_1
+        aesop
+      · intro h
+        cases h
+        have : (S₁, s) ⟹ t_1 := (hS s t_1).mpr hS_1
+        have : (T₁, t_1) ⟹ t := (hT t_1 t).mpr hT_1
+        aesop
+
 
 theorem BigStepEquiv.if_congr {B S₁ S₂ T₁ T₂} (hS : S₁ ~ S₂) (hT : T₁ ~ T₂) :
-    Stmt.ifThenElse B S₁ T₁ ~ Stmt.ifThenElse B S₂ T₂ :=
-  sorry
-
+    Stmt.ifThenElse B S₁ T₁ ~ Stmt.ifThenElse B S₂ T₂ := by
+    unfold BigStepEquiv
+    intro s t
+    apply Iff.intro
+    · intro h
+      cases h
+      · simp [hcond, hS]
+        apply (hS s t).mp
+        assumption
+      · simp [hcond]
+        apply (hT s t).mp
+        assumption
+    · intro h
+      cases h
+      · simp [hcond]
+        --how to do this with aesop without instantiating everyhting?
+        simp [(hS s t).mpr hbody]
+      · simp [hcond, (hT s t).mpr hbody]
 end LoVe
