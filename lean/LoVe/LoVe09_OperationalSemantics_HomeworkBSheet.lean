@@ -47,6 +47,8 @@ concerned), and `repeat 0 S` has the same effect as `skip`.
 inductive BigStep : Stmt × State → State → Prop
   | skip (s) :
     BigStep (Stmt.skip, s) s
+  | assign (x a s) : BigStep (Stmt.assign x a, s) (s[x ↦ a s])
+  | seq (S1 S2 s):  BigStep (Stmt.seq S1 S2, s) s
 -- enter the missing cases here
 
 infix:110 " ⟹ " => BigStep

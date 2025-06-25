@@ -34,12 +34,18 @@ record this in the invariant, by adding a conjunct `s "x" = x₀`. -/
 
 theorem COUNT_UP_correct (a₀ : ℕ) :
     {* fun s ↦ s "a" = a₀ *} (COUNT_UP) {* fun s ↦ s "a" = a₀ ∧ s "b" = a₀ *} :=
-  sorry
+    show  {* fun s ↦ s "a" = a₀ *}
+      (Stmt.invWhileDo (fun s ↦ s "a" = a₀) (fun s ↦ s "b" ≠ s "a")
+        (Stmt.assign "b" (fun s ↦ s "b" + 1)))
+      {* fun s ↦ s "a" = a₀ ∧ s "b" = a₀ *} from by
+      vcg <;>
+      aesop
 
 /- 1.2. What happens if the program is run with `b > a`? How is this captured
 by the Hoare triple? -/
 
 -- enter your solution here
+-- hoare triple doesnt tell us anything in case of nontermination
 
 /- 1.3. The following WHILE program is intended to compute the Gaussian sum up
 to `n`, leaving the result in `r`. -/
@@ -60,9 +66,20 @@ def sumUpTo : ℕ → ℕ
 /- Invoke `vcg` on `GAUSS` using a suitable loop invariant and prove the
 emerging verification conditions. -/
 
+
+
 theorem GAUSS_correct (N : ℕ) :
     {* fun s ↦ True *} (GAUSS N) {* fun s ↦ s "r" = sumUpTo N *} :=
-  sorry
+    show {* fun s ↦ True *} (  Stmt.assign "r" (fun s ↦ 0);
+  Stmt.assign "n" (fun s ↦ 0);
+  Stmt.invWhileDo (fun s ↦ s "r" = sumUpTo (s "n")) (fun s ↦ s "n" ≠ N)
+    (Stmt.assign "n" (fun s ↦ s "n" + 1);
+     Stmt.assign "r" (fun s ↦ s "r" + s "n")))
+     {* fun s ↦ s "r" = sumUpTo N *} from by
+     vcg <;>
+     aesop
+     rw [sumUpTo]
+     ac_rfl
 
 /- 1.4 (**optional**). The following program `MUL` is intended to compute the
 product of `n` and `m`, leaving the result in `r`. Invoke `vcg` on `MUL` using a
@@ -74,9 +91,24 @@ def MUL : Stmt :=
     (Stmt.assign "r" (fun s ↦ s "r" + s "m");
      Stmt.assign "n" (fun s ↦ s "n" - 1))
 
+theorem bl2a (a m n:Nat): (n - (a - 1)) = n - a + 1 := by
+  sorry
+
+
 theorem MUL_correct (n₀ m₀ : ℕ) :
     {* fun s ↦ s "n" = n₀ ∧ s "m" = m₀ *} (MUL) {* fun s ↦ s "r" = n₀ * m₀ *} :=
-  sorry
+  show {* fun s ↦ s "n" = n₀ ∧ s "m" = m₀ *}
+    (  Stmt.assign "r" (fun s ↦ 0);
+  Stmt.invWhileDo (fun s ↦ (s "m" = m₀ ∧ s "r" = (n₀-s "n") * s "m")) (fun s ↦ s "n" ≠ 0)
+    (Stmt.assign "r" (fun s ↦ s "r" + s "m");
+     Stmt.assign "n" (fun s ↦ s "n" - 1)))
+    {* fun s ↦ s "r" = n₀ * m₀ *} from by
+    vcg <;>
+    aesop
+    rw [bl2a]
+    ring
+    use n₀ --ask how to do this in a less shitty way
+
 
 
 /- ## Question 2: Hoare Triples for Total Correctness
