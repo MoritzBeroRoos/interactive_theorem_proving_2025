@@ -77,8 +77,7 @@ theorem GAUSS_correct (N : ℕ) :
      Stmt.assign "r" (fun s ↦ s "r" + s "n")))
      {* fun s ↦ s "r" = sumUpTo N *} from by
      vcg <;>
-     aesop
-     rw [sumUpTo]
+     aesop (add simp sumUpTo)
      ac_rfl
 
 /- 1.4 (**optional**). The following program `MUL` is intended to compute the
@@ -91,23 +90,47 @@ def MUL : Stmt :=
     (Stmt.assign "r" (fun s ↦ s "r" + s "m");
      Stmt.assign "n" (fun s ↦ s "n" - 1))
 
-theorem bl2a (a m n:Nat): (n - (a - 1)) = n - a + 1 := by
-  sorry
 
+
+
+
+theorem bla (r m n : ℤ): r + m + (n * m - m) = r + n * m := by linarith
 
 theorem MUL_correct (n₀ m₀ : ℕ) :
     {* fun s ↦ s "n" = n₀ ∧ s "m" = m₀ *} (MUL) {* fun s ↦ s "r" = n₀ * m₀ *} :=
   show {* fun s ↦ s "n" = n₀ ∧ s "m" = m₀ *}
     (  Stmt.assign "r" (fun s ↦ 0);
-  Stmt.invWhileDo (fun s ↦ (s "m" = m₀ ∧ s "r" = (n₀-s "n") * s "m")) (fun s ↦ s "n" ≠ 0)
+  Stmt.invWhileDo (fun s ↦ (s "m" = m₀ ∧ s "r" + s "n" * s "m" = n₀ * s "m")) (fun s ↦ s "n" ≠ 0)
     (Stmt.assign "r" (fun s ↦ s "r" + s "m");
      Stmt.assign "n" (fun s ↦ s "n" - 1)))
     {* fun s ↦ s "r" = n₀ * m₀ *} from by
-    vcg <;>
-    aesop
-    rw [bl2a]
-    ring
-    use n₀ --ask how to do this in a less shitty way
+    vcg
+    ·
+      intro s a
+      simp_all only [ne_eq, String.reduceEq, not_false_eq_true, update_apply_neq, update_apply, true_and]
+      obtain ⟨left, right⟩ := a
+      obtain ⟨left, right_1⟩ := left
+      subst left
+
+      generalize s "m" = m, s "n" = n at *
+      simp [<-right_1]
+      clear right_1
+      suffices m + (n - 1) * m = n * m by linarith
+      induction n with
+      | zero => simp at *
+      | succ n _ =>
+        suffices m + (n) * m = (n + 1) * m by simp [Nat.add_sub_cancel, this]
+        linarith
+
+    · intro s a a_1
+      simp_all only [ne_eq, Decidable.not_not, zero_mul, add_zero]
+    · intro s a
+      simp_all only [ne_eq, String.reduceEq, not_false_eq_true, update_apply_neq, update_apply, zero_add, and_self]
+
+
+
+
+
 
 
 
