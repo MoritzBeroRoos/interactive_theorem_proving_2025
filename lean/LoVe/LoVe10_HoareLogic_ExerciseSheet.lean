@@ -77,8 +77,7 @@ theorem GAUSS_correct (N : ℕ) :
      Stmt.assign "r" (fun s ↦ s "r" + s "n")))
      {* fun s ↦ s "r" = sumUpTo N *} from by
      vcg <;>
-     aesop (add simp sumUpTo)
-     ac_rfl
+     aesop (add norm sumUpTo); ac_rfl
 
 /- 1.4 (**optional**). The following program `MUL` is intended to compute the
 product of `n` and `m`, leaving the result in `r`. Invoke `vcg` on `MUL` using a
@@ -111,15 +110,15 @@ theorem MUL_correct (n₀ m₀ : ℕ) :
       obtain ⟨left, right⟩ := a
       obtain ⟨left, right_1⟩ := left
       subst left
-
+      --haev ( a b c: ℕ) (hc: c ≠ 0): a + b + (c-1) * b = a + c * ... := by cases c with
       generalize s "m" = m, s "n" = n at *
       simp [<-right_1]
       clear right_1
-      suffices m + (n - 1) * m = n * m by linarith
-      induction n with
+      suffices m + (n - 1) * m = n * m by omega
+      cases n with
       | zero => simp at *
-      | succ n _ =>
-        suffices m + (n) * m = (n + 1) * m by simp [Nat.add_sub_cancel, this]
+      | succ n =>
+        suffices  (n) * m+ m = (n + 1) * m by rw [Nat.add_succ_sub_one]; linarith
         linarith
 
     · intro s a a_1
@@ -151,14 +150,20 @@ namespace TotalHoare
 
 theorem consequence {P P' Q Q' S}
       (hS : [* P *] (S) [* Q *]) (hP : ∀s, P' s → P s) (hQ : ∀s, Q s → Q' s) :
-    [* P' *] (S) [* Q' *] :=
-  sorry
+    [* P' *] (S) [* Q' *] := by
+    intro s hP's
+    have hPs: P s := by apply hP s hP's
+    have ex_t : ∃ t, (S, s) ⟹ t ∧ Q t := by aesop
+    obtain ⟨t, ht⟩ := ex_t
+    use t
+    aesop
+
 
 /- 2.2. Prove the rule for `skip`. -/
 
 theorem skip_intro {P} :
     [* P *] (Stmt.skip) [* P *] :=
-  sorry
+  by aesop (add norm TotalHoare)
 
 /- 2.3. Prove the rule for `assign`. -/
 
