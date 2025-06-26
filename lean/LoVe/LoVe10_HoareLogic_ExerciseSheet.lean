@@ -168,15 +168,16 @@ theorem skip_intro {P} :
 /- 2.3. Prove the rule for `assign`. -/
 
 theorem assign_intro {P x a} :
-    [* fun s ↦ P (s[x ↦ a s]) *] (Stmt.assign x a) [* P *] :=
-  sorry
+    [* fun s ↦ P (s[x ↦ a s]) *] (Stmt.assign x a) [* P *] := by
+    aesop (add norm TotalHoare)
 
 /- 2.4. Prove the rule for `seq`. -/
 
 theorem seq_intro {P Q R S T} (hS : [* P *] (S) [* Q *])
       (hT : [* Q *] (T) [* R *]) :
-    [* P *] (S; T) [* R *] :=
-  sorry
+    [* P *] (S; T) [* R *] := by
+    aesop (add norm TotalHoare) (add safe destruct hS) (add safe destruct hT)
+
 
 /- 2.5. Complete the proof of the rule for `if`–`then`–`else`.
 
@@ -185,8 +186,10 @@ Hint: The proof requires a case distinction on the truth value of `B s`. -/
 theorem if_intro {B P Q S T}
       (hS : [* fun s ↦ P s ∧ B s *] (S) [* Q *])
       (hT : [* fun s ↦ P s ∧ ¬ B s *] (T) [* Q *]) :
-    [* P *] (Stmt.ifThenElse B S T) [* Q *] :=
-  sorry
+    [* P *] (Stmt.ifThenElse B S T) [* Q *] := by
+    intro s Ps
+    cases (em (B s))
+    <;> aesop (add norm TotalHoare, safe destruct hS, safe destruct hT)
 
 /- 2.6 (**optional**). Try to prove the rule for `while`.
 
@@ -209,15 +212,26 @@ truth value of `B s`. -/
 theorem var_while_intro_aux {B} (I : State → Prop) (V : State → ℕ) {S}
     (h_inv : ∀v₀,
        [* fun s ↦ I s ∧ B s ∧ V s = v₀ *] (S) [* fun s ↦ I s ∧ V s < v₀ *]) :
-    ∀v₀ s, V s = v₀ → I s → ∃t, (Stmt.whileDo B S, s) ⟹ t ∧ I t ∧ ¬ B t
-  | v₀, s, V_eq, hs =>
-    sorry
+    ∀v₀ s, V s = v₀ → I s → ∃t, (Stmt.whileDo B S, s) ⟹ t ∧ I t ∧ ¬ B t := by
+  intro v₀ s V_eq hs
+  cases (em (B s))
+  · have : ∃ t, (S, s) ⟹ t ∧ I t ∧ V t < v₀ := by
+      aesop
+    obtain ⟨t, ht⟩ := this
+    have : ∃ t_1, (Stmt.whileDo B S, t) ⟹ t_1 ∧ I t_1 ∧ ¬B t_1 := by aesop (add unsafe var_while_intro_aux)
+    obtain ⟨t_1, ht_1⟩ := this
+    use t_1
+    aesop
+  · use s
+    aesop
 
 theorem var_while_intro {B} (I : State → Prop) (V : State → ℕ) {S}
     (hinv : ∀v₀,
        [* fun s ↦ I s ∧ B s ∧ V s = v₀ *] (S) [* fun s ↦ I s ∧ V s < v₀ *]) :
-    [* I *] (Stmt.whileDo B S) [* fun s ↦ I s ∧ ¬ B s *] :=
-  sorry
+    [* I *] (Stmt.whileDo B S) [* fun s ↦ I s ∧ ¬ B s *] := by
+    intro s hs
+    have : _ := (var_while_intro_aux I V hinv (V s) s rfl hs)
+    exact this
 
 end TotalHoare
 
