@@ -30,8 +30,9 @@ def POWER_OF_TWO (N : ℕ) : Stmt :=
 /- 1.1 (1 point). Define a recursive function that computes 2 to the power of
 `n`. -/
 
-def twoToTheNth : ℕ → ℕ :=
-  sorry
+def twoToTheNth : ℕ → ℕ := fun
+  | .zero => 1
+  | .succ n => twoToTheNth n * 2
 
 /- Remember to test your function. Otherwise, you will have big difficulties
 answering question 2.2 below. -/
@@ -53,7 +54,16 @@ theorem POWER_OF_TWO_correct (N : ℕ) :
     {* fun s ↦ True *}
     (POWER_OF_TWO N)
     {* fun s ↦ s "r" = twoToTheNth N *} :=
-  sorry
+  show
+  {* fun s ↦ True *}
+  (Stmt.assign "r" (fun s ↦ 1);
+  Stmt.assign "n" (fun s ↦ 0);
+  Stmt.invWhileDo (fun s ↦ s "r" = twoToTheNth (s "n")) (fun s ↦ s "n" ≠ N)
+    (Stmt.assign "r" (fun s ↦ s "r" * 2);
+     Stmt.assign "n" (fun s ↦ s "n" + 1)))
+  {* fun s ↦ s "r" = twoToTheNth N *} from by
+    vcg
+    all_goals aesop
 
 
 /- ## Question 2 (4 points + 1 bonus point): Hoare Logic for LOOP
@@ -113,36 +123,56 @@ namespace PartialHoare
 
 theorem consequence {P P' Q Q' S} (h : {* P *} (S) {* Q *})
       (hp : ∀s, P' s → P s) (hq : ∀s, Q s → Q' s) :
-    {* P' *} (S) {* Q' *} :=
-  sorry
+    {* P' *} (S) {* Q' *} := by
+    intro s t P's hSst
+    aesop
 
 /- 2.2 (1 point). Prove the rule for `assign`. -/
 
 theorem assign_intro {P x a} :
-    {* fun s ↦ P (s[x ↦ a s]) *} (Stmt.assign x a) {* P *} :=
-  sorry
+    {* fun s ↦ P (s[x ↦ a s]) *} (Stmt.assign x a) {* P *} := by
+    intro s t hP hA
+    cases hA
+    exact hP
 
 /- 2.3 (1 point). Prove the rule for `seq`. -/
 
 theorem seq_intro {P Q R S T} (hS : {* P *} (S) {* Q *})
       (hT : {* Q *} (T) {* R *}) :
-    {* P *} (Stmt.seq S T) {* R *} :=
-  sorry
+    {* P *} (Stmt.seq S T) {* R *} := by
+    intro s t Ps STs
+    cases STs
+    aesop
 
 /- 2.4 (1 point). Prove the rule for `if`–`then`. -/
 
 theorem if_intro {b P Q S}
       (htrue : {* fun s ↦ P s ∧ b s *} (S) {* Q *})
       (hfalse : ∀s, P s ∧ ¬ b s → Q s) :
-    {* P *} (Stmt.ifThen b S) {* Q *} :=
-  sorry
+    {* P *} (Stmt.ifThen b S) {* Q *} := by
+    intro s t Ps hIf
+    cases hIf
+    <;> aesop
 
 /- 2.5 (1 bonus point). Prove the rule for `loop`. Notice the similarity with
 the rule for `while` in the WHILE language. -/
 
+
+
+
 theorem loop_intro {P S} (h : {* P *} (S) {* P *}) :
-    {* P *} (Stmt.loop S) {* P *} :=
-  sorry
+    {* P *} (Stmt.loop S) {* P *} := by
+    intro s t Ps h
+    generalize bla: (S.loop, s) = Ss at h
+    have b1: s = Ss.2 := by aesop
+    have b2: S.loop = Ss.1 := by rw [← bla]
+    rw [b1] at Ps
+    clear bla
+    induction h generalizing s
+    <;> aesop
+    
+
+
 
 end PartialHoare
 
