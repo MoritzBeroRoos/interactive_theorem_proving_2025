@@ -31,8 +31,11 @@ predicate introduced in the lecture 5 demo. -/
 
 #print Even
 
-def Eveℕ : Type :=
-  sorry
+def Eveℕ : Type := {n : ℕ // Even n }
+
+
+@[simp]
+theorem bla (m : Eveℕ) : Even m.val := m.property
 
 /- 1.2 (1 point). Prove the following theorem about the `Even` predicate. You will
 need it to answer question 1.3.
@@ -40,20 +43,27 @@ need it to answer question 1.3.
 Hint: The theorems `add_assoc` and `add_comm` might be useful. -/
 
 theorem Even.add {m n : ℕ} (hm : Even m) (hn : Even n) :
-    Even (m + n) :=
-  sorry
+    Even (m + n) := by
+  induction hn with
+  | zero => assumption
+  | add_two k _ _ => aesop (add unsafe Even.add_two)
+
 
 /- 1.3 (2 points). Define zero and addition of even numbers by filling in the
 `sorry` placeholders. -/
 
 def Eveℕ.zero : Eveℕ :=
-  sorry
+  Subtype.mk 0 (by simp [Even.zero])
 
 def Eveℕ.add (m n : Eveℕ) : Eveℕ :=
-  sorry
+  Subtype.mk (m.val + n.val) (by
+    aesop (add unsafe norm Even.add)
+  )
 
 /- 1.4 (4 points). Prove that addition of even numbers is commutative and
 associative, and has 0 as an identity element. -/
+
+
 
 theorem Eveℕ.add_comm (m n : Eveℕ) :
     Eveℕ.add m n = Eveℕ.add n m :=

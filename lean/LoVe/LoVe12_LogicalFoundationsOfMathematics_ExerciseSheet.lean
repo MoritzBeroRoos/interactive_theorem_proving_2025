@@ -53,14 +53,16 @@ theorem List.length_add :
 def Vector.add {n : ℕ} : Vector ℤ n → Vector ℤ n → Vector ℤ n :=
  fun a b ↦ Subtype.mk (List.add a.val b.val) (by
   have :  (a.val).length = n := by exact a.property
+  rw [←this]
   simp [←this] --wWTF warum nicht rw?
+
   apply List.length_add
   simp [a.property, b.property]
   )
 
 /- 1.3. Show that `List.add` and `Vector.add` are commutative. -/
 @[simp]
-theorem List.add_left (xs: List ℤ):
+theorem List.add_left (xs: Prop):
 List.add [] xs = [] := by
   cases xs
   simp[add]
@@ -92,7 +94,7 @@ theorem List.add.comm :
 theorem Vector.add.comm {n : ℕ} (u v : Vector ℤ n) :
     Vector.add u v = Vector.add v u := by
     apply Subtype.eq
-    unfold add --why is this step not needed?
+    unfold add
     apply List.add.comm
 
 
@@ -128,11 +130,11 @@ theorem Int.neg_eq (p n : ℕ) :
     Int.neg ⟦(p, n)⟧ = ⟦(n, p)⟧ :=
   by rfl
 
-
+#check Quotient.inductionOn
 #check Quotient.ind
 theorem int.neg_neg (a : Int) :
     Int.neg (Int.neg a) = a := by
-    induction a using Quotient.ind
+    induction a using Quotient.inductionOn
     constructor--dafuq? this works?
 
 
