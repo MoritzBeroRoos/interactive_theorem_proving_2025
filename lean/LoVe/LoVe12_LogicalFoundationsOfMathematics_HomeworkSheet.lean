@@ -34,8 +34,8 @@ predicate introduced in the lecture 5 demo. -/
 def Eveℕ : Type := {n : ℕ // Even n }
 
 
-@[simp]
-theorem bla (m : Eveℕ) : Even m.val := m.property
+@[aesop safe forward]
+theorem fwd_Eveℕ (m : Eveℕ) : Even m.val := m.property
 
 /- 1.2 (1 point). Prove the following theorem about the `Even` predicate. You will
 need it to answer question 1.3.
@@ -63,23 +63,28 @@ def Eveℕ.add (m n : Eveℕ) : Eveℕ :=
 /- 1.4 (4 points). Prove that addition of even numbers is commutative and
 associative, and has 0 as an identity element. -/
 
-
+#check Subtype.eq
 
 theorem Eveℕ.add_comm (m n : Eveℕ) :
-    Eveℕ.add m n = Eveℕ.add n m :=
-  sorry
+    Eveℕ.add m n = Eveℕ.add n m := by
+    apply Subtype.eq
+    simp [add, Nat.add_comm]
+
 
 theorem Eveℕ.add_assoc (l m n : Eveℕ) :
-    Eveℕ.add (Eveℕ.add l m) n = Eveℕ.add l (Eveℕ.add m n) :=
-  sorry
+    Eveℕ.add (Eveℕ.add l m) n = Eveℕ.add l (Eveℕ.add m n) := by
+    apply Subtype.eq
+    simp [add, Nat.add_assoc]
 
 theorem Eveℕ.add_iden_left (n : Eveℕ) :
-    Eveℕ.add Eveℕ.zero n = n :=
-  sorry
+    Eveℕ.add Eveℕ.zero n = n := by
+  apply Subtype.eq
+  simp [add, zero]
 
 theorem Eveℕ.add_iden_right (n : Eveℕ) :
-    Eveℕ.add n Eveℕ.zero = n :=
-  sorry
+    Eveℕ.add n Eveℕ.zero = n := by
+  apply Subtype.eq
+  simp [add, zero]
 
 
 /- ## Question 2 (2 points + 2 bonus points): Hilbert Choice
@@ -94,10 +99,16 @@ Hints:
 * The theorem `le_of_not_gt` might be useful. -/
 
 theorem exists_minimal_arg_helper (f : ℕ → ℕ) :
-    ∀x m, f m = x → ∃n, ∀i, f n ≤ f i
-  | x, m, eq =>
-    by
-      sorry
+    ∀x m, f m = x → ∃n, ∀i, f n ≤ f i := by
+  intro x m fm_eq
+  cases em (∃j, f j < x) with
+  | inl h =>
+    obtain ⟨j,hj⟩ := h
+    exact exists_minimal_arg_helper f (f j) j (rfl)
+  | inr h =>
+    use m
+    aesop
+
 
 /- Now this interesting theorem falls off: -/
 
@@ -110,13 +121,12 @@ define the following function, which returns the (or an) index of the minimal
 element in `f`'s image. -/
 
 noncomputable def minimal_arg (f : ℕ → ℕ) : ℕ :=
-  sorry
+  Classical.choose (show ∃n, ∀i, f n ≤ f i by exact exists_minimal_arg f)
 
 /- 2.3 (1 point). Prove the following characteristic theorem about your
 definition. -/
 
 theorem minimal_arg_spec (f : ℕ → ℕ) :
-    ∀i : ℕ, f (minimal_arg f) ≤ f i :=
-  sorry
+    ∀i : ℕ, f (minimal_arg f) ≤ f i := Classical.choose_spec (exists_minimal_arg f)
 
 end LoVe
