@@ -293,7 +293,7 @@ theorem injection_example {α : Type} (x y : α) (xs ys : List α)
       (h : x :: xs = y :: ys) :
     x = y ∧ xs = ys :=
   by
-    cases h
+    cases ‹x :: xs = y :: ys›
     simp
 
 /- If `r` fails to match `l`, no subgoals emerge; the proof is complete. -/

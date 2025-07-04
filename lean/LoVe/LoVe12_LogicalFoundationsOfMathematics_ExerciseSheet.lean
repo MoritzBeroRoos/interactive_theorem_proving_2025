@@ -53,7 +53,7 @@ theorem List.length_add :
 def Vector.add {n : ℕ} : Vector ℤ n → Vector ℤ n → Vector ℤ n :=
  fun a b ↦ Subtype.mk (List.add a.val b.val) (by
   have :  (a.val).length = n := by exact a.property
-  rw [←this]
+  --rw [←this]
   simp [←this] --wWTF warum nicht rw?
 
   apply List.length_add
@@ -62,7 +62,7 @@ def Vector.add {n : ℕ} : Vector ℤ n → Vector ℤ n → Vector ℤ n :=
 
 /- 1.3. Show that `List.add` and `Vector.add` are commutative. -/
 @[simp]
-theorem List.add_left (xs: Prop):
+theorem List.add_left (xs: List ℤ):
 List.add [] xs = [] := by
   cases xs
   simp[add]
