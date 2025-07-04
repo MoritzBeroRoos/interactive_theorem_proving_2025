@@ -38,19 +38,16 @@ theorems below all take `[BEq α]` as type class argument.
 instance Multiset.Setoid (α : Type) [BEq α] : Setoid (List α) :=
 { r     := fun as bs ↦ ∀x, List.count x as = List.count x bs
   iseqv :=
-    { refl  :=
-        sorry
-      symm  :=
-        sorry
-      trans :=
-        sorry
+    { refl  := by aesop
+      symm  := by aesop;
+      trans := by aesop
     } }
 
 /- 1.2 (1 point). Define the type of multisets as the quotient over the
 relation `Multiset.Setoid`. -/
 
-def Multiset (α : Type) [BEq α] : Type :=
-  sorry
+def Multiset (α : Type) [BEq α] : Type := Quotient (Multiset.Setoid α)
+
 
 /- 1.3 (3 points). Now we have a type `Multiset α` but no operations on it.
 Basic operations on multisets include the empty multiset (`∅`), the singleton
@@ -61,39 +58,54 @@ of elements are added; thus, `{2} ⊎ {2, 2} = {2, 2, 2}`.
 Fill in the `sorry` placeholders below to implement the basic multiset
 operations. -/
 
+def Multiset.equiv_iff {α : Type} [BEq α] {as bs : List α}:
+  as ≈ bs ↔ ∀x, List.count x as = List.count x bs := by rfl
+
 def Multiset.mk {α : Type} [BEq α] : List α → Multiset α :=
   Quotient.mk (Multiset.Setoid α)
 
-def Multiset.empty {α : Type} [BEq α] : Multiset α :=
-  sorry
+def Multiset.empty {α : Type} [BEq α] : Multiset α := ⟦[]⟧
 
-def Multiset.singleton {α : Type} [BEq α] (a : α) : Multiset α :=
-  sorry
+def Multiset.singleton {α : Type} [BEq α] (a : α) : Multiset α := ⟦[a]⟧
 
 def Multiset.union {α : Type} [BEq α] : Multiset α → Multiset α → Multiset α :=
   Quotient.lift₂
-  sorry
-  sorry
+  fun
+  | l1, l2 => ⟦l1++l2⟧
+  (by
+  intro a1 b1 a2 b2 h1 h2
+  apply Quotient.sound
+  aesop (add norm Multiset.equiv_iff)
+  )
 
 /- 1.4 (4 points). Prove that `Multiset.union` is commutative and associative
 and has `Multiset.empty` as identity element. -/
 
 theorem Multiset.union_comm {α : Type} [BEq α] (A B : Multiset α) :
-    Multiset.union A B = Multiset.union B A :=
-  sorry
+    Multiset.union A B = Multiset.union B A := by
+    cases A using Quotient.ind
+    cases B using Quotient.ind
+    simp [union]
+    apply Quotient.sound
+    aesop (add norm Multiset.equiv_iff, unsafe add_comm)
 
 theorem Multiset.union_assoc {α : Type} [BEq α] (A B C : Multiset α) :
     Multiset.union (Multiset.union A B) C =
-    Multiset.union A (Multiset.union B C) :=
-  sorry
+    Multiset.union A (Multiset.union B C) := by
+    cases A using Quotient.ind
+    cases B using Quotient.ind
+    cases C using Quotient.ind
+    simp [union]
 
 theorem Multiset.union_iden_left {α : Type} [BEq α] (A : Multiset α) :
-    Multiset.union Multiset.empty A = A :=
-  sorry
+    Multiset.union Multiset.empty A = A := by
+    cases A using Quotient.ind
+    simp [empty, union]
 
 theorem Multiset.union_iden_right {α : Type} [BEq α] (A : Multiset α) :
-    Multiset.union A Multiset.empty = A :=
-  sorry
+    Multiset.union A Multiset.empty = A := by
+    cases A using Quotient.ind
+    simp [empty, union]
 
 
 /- ## Question 2 (2 bonus points): Nonempty Types
@@ -121,8 +133,11 @@ resembles a theorem proved by `sorry`, but without the warning. -/
 lets us derive `False`. -/
 
 theorem proof_of_False :
-    False :=
-  sorry
+    False := by
+    have a : Nonempty False := Sort_Nonempty False
+    cases a
+    assumption
+
 
 /- 2.2 (1 bonus point). Prove that even the following weaker axiom leads to a
 contradiction. Of course, you may not use the axiom or the theorem from 3.1.
@@ -133,7 +148,9 @@ axiom Type_Nonempty (α : Type _) :
     Nonempty α
 
 theorem another_proof_of_False :
-    False :=
-  sorry
-
+    False := by
+  have nonempty : Nonempty {a : Nat // False} := Type_Nonempty {a : Nat // False}
+  cases nonempty with
+  | intro val => exact val.property
+  
 end LoVe
