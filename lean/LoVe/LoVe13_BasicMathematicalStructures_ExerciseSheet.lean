@@ -96,16 +96,17 @@ Recall the following definitions from the lecture: -/
 tree. -/
 
 theorem Finset.elems_mirror (t : Tree ℕ) :
-    Finset.elems (mirror t) = Finset.elems t :=
-  sorry
+    Finset.elems (mirror t) = Finset.elems t := by
+    induction t with
+    | nil => rfl
+    | node a t1 t2 ih1 ih2 => simp [mirror, elems, ih1, ih2]; ac_rfl
 
 /- 2.2. Show that this does not hold for the list of nodes by providing a
 tree `t` for which `List.elems t ≠ List.elems (mirror t)`.
 
 If you define a suitable counterexample, the proof below will succeed. -/
 
-def rottenTree : Tree ℕ :=
-  sorry
+def rottenTree : Tree ℕ := Tree.node 0 (Tree.node 0 .nil .nil) (.node 1 .nil .nil)
 
 #eval List.elems rottenTree
 #eval List.elems (mirror rottenTree)
