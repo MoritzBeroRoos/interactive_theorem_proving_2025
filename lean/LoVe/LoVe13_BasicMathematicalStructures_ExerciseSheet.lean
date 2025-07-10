@@ -35,12 +35,22 @@ def Tree.graft {α : Type} : Tree α → Tree α → Tree α
 /- 1.1. Prove the following two theorems by structural induction on `t`. -/
 
 theorem Tree.graft_assoc {α : Type} (t u v : Tree α) :
-    Tree.graft (Tree.graft t u) v = Tree.graft t (Tree.graft u v) :=
-  sorry
+    Tree.graft (Tree.graft t u) v = Tree.graft t (Tree.graft u v) := by
+    induction t with
+    | nil => rfl
+    | node _ t1 t2 _ _ =>
+      simp [graft]
+      aesop
+
 
 theorem Tree.graft_nil {α : Type} (t : Tree α) :
-    Tree.graft t Tree.nil = t :=
-  sorry
+    Tree.graft t Tree.nil = t := by
+    induction t <;>
+    simp [graft]
+    aesop
+
+theorem Tree.nil_graft {α : Type} (t : Tree α) :
+    Tree.graft Tree.nil t = t := by rfl
 
 /- 1.2. Declare `Tree` an instance of `AddMonoid` using `graft` as the
 addition operator. -/
@@ -49,18 +59,15 @@ addition operator. -/
 
 instance Tree.AddMonoid {α : Type} : AddMonoid (Tree α) :=
   { add       := Tree.graft
-    add_assoc :=
-      sorry
+    add_assoc := Tree.graft_assoc
     zero      := Tree.nil
-    add_zero  :=
-      sorry
-    zero_add  :=
-      sorry
+    add_zero  := Tree.graft_nil
+    zero_add  := Tree.nil_graft
     nsmul     := @nsmulRec (Tree α) (Zero.mk Tree.nil) (Add.mk Tree.graft)
   }
 
 /- 1.3 (**optional**). Explain why `Tree` with `graft` as addition cannot be
-declared an instance of `AddGroup`. -/
+declared an instance of `AddGroup`. There is no inverse Element, since Trees only become bigger with our Add_def -/
 
 #print AddGroup
 
@@ -70,8 +77,12 @@ declared an instance of `AddGroup`. -/
 with `graft` as addition does not constitute an `AddGroup`. -/
 
 theorem Tree.add_left_neg_counterexample :
-    ∃x : Tree ℕ, ∀y : Tree ℕ, Tree.graft y x ≠ Tree.nil :=
-  sorry
+    ∃x : Tree ℕ, ∀y : Tree ℕ, Tree.graft y x ≠ Tree.nil := by
+    use (Tree.node 0 Tree.nil Tree.nil)
+    intro y
+    cases y
+    · simp [graft]
+    · simp [graft]
 
 
 /- ## Question 2: Multisets and Finsets
