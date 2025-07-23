@@ -433,9 +433,46 @@ addition on Cauchy sequences as pairwise addition: -/
 
 instance Add : Add CauchySeq :=
   { add := fun f g : CauchySeq ↦
-      Subtype.mk (fun n : ℕ ↦ seqOf f n + seqOf g n) sorry }
+      Subtype.mk (fun n : ℕ ↦ seqOf f n + seqOf g n) (by
+        intro ε hε
+        obtain ⟨N1, hN1⟩ := f.property (ε/4) (by linarith)
+        obtain ⟨N2, hN2⟩ := g.property (ε/4) (by linarith)
+        let N := N1 + N2
+        use N
+        intro m m_geq_N
+        have m_geq_N1: m ≥ N1 := by simp[N] at m_geq_N; linarith
+        have m_geq_N2: m ≥ N2 := by simp[N] at m_geq_N; linarith
 
-/- Above, we omit the proof that the addition of two Cauchy sequences is again
+        have h_fN_fm: |seqOf f N - seqOf f m| < ε / 2 := by
+          have : |seqOf f N1 - seqOf f N| < ε / 4 := hN1 N (by aesop)
+          have : |seqOf f N1 - seqOf f m| < ε / 4 := hN1 m m_geq_N1
+          calc
+            |seqOf f N - seqOf f m| = |(seqOf f N - seqOf f N1) + (seqOf f N1 - seqOf f m)| := by aesop
+                                  _ ≤ |seqOf f N - seqOf f N1| + |seqOf f N1 - seqOf f m| := by apply abs_add
+                                  _ = |seqOf f N1 - seqOf f N| + |seqOf f N1 - seqOf f m| := by simp[abs_sub_comm]
+                                  _ < ε/4  + ε/4 := by linarith
+                                  _ = ε/2 := by linarith
+
+        have h_gN_gm: |seqOf g N - seqOf g m| < ε / 2 := by
+          have : |seqOf g N2 - seqOf g N| < ε / 4 := hN2 N (by aesop)
+          have : |seqOf g N2 - seqOf g m| < ε / 4 := hN2 m m_geq_N2
+          calc
+              |seqOf g N - seqOf g m|
+            = |(seqOf g N - seqOf g N2) + (seqOf g N2 - seqOf g m)| := by aesop
+            _ ≤ |seqOf g N - seqOf g N2| + |seqOf g N2 - seqOf g m| := by apply abs_add
+            _ = |seqOf g N2 - seqOf g N| + |seqOf g N2 - seqOf g m| := by simp[abs_sub_comm]
+            _ < ε/4  + ε/4 := by linarith
+            _ = ε/2 := by linarith
+
+        calc
+            |seqOf f N + seqOf g N - (seqOf f m + seqOf g m)|
+          = |(seqOf f N - seqOf f m) + (seqOf g N - seqOf g m)| := by rw [add_sub_add_comm]
+        _ ≤ |(seqOf f N - seqOf f m)| + |(seqOf g N - seqOf g m)| := by apply abs_add
+        _ < ε/2 + ε/2 := by linarith
+        _ = ε := by linarith
+      ) }
+
+/- Above, we don't omit the proof that the addition of two Cauchy sequences is again
 a Cauchy sequence.
 
 Next, we need to show that this addition is compatible with `≈`: -/
